@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Répartition des Dépenses</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #e6e6e6; /* Fond clair */
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            margin-top: 30px;
+        }
+        .card {
+            background: #fff; /* Fond de carte blanc */
+            border-radius: 12px;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+        .card-header {
+            background-color: #dc3545; /* Rouge vif */
+            color: #fff;
+            padding: 15px;
+            border-radius: 12px 12px 0 0;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .btn-primary {
+            background-color: #dc3545; /* Rouge vif */
+            border: none;
+            color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .btn-primary:hover {
+            background-color: #c82333; /* Rouge plus foncé */
+        }
+        .btn-secondary {
+            background-color: #333; /* Noir profond */
+            border: none;
+            color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .btn-secondary:hover {
+            background-color: #000; /* Noir absolu */
+        }
+        .results {
+            background: #fff;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        .form-control {
+            border-radius: 5px;
+            border: 1px solid #ced4da; /* Gris clair pour les champs */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 100%; /* Ajuste la largeur à 100% du conteneur */
+            height: 45px; /* Ajuste la hauteur des champs */
+        }
+        .form-control:focus {
+            border-color: #dc3545; /* Rouge pour le focus */
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25); /* Ombre rouge pour le focus */
+        }
+        .icon {
+            margin-right: 8px;
+        }
+        .remaining-percentage-card {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: #dc3545; /* Rouge vif */
+            color: #fff;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+        .date-time {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .deductions {
+            font-size: 0.9em;
+            color: #dc3545; /* Rouge pour les créances */
+        }
+        table {
+            margin-top: 20px;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        table th, table td {
+            text-align: center;
+            padding: 12px;
+        }
+        table th {
+            background-color: #dc3545; /* Rouge vif */
+            color: #fff;
+        }
+        table td {
+            background-color: #f8f9fa; /* Blanc très clair */
+        }
+        .results-table {
+            margin-top: 20px;
+        }
+        /* Styles spécifiques pour les petits écrans */
+        @media (max-width: 768px) {
+            table {
+                font-size: 0.9em; /* Réduit la taille de la police */
+                overflow-x: auto; /* Ajoute un défilement horizontal pour les petits écrans */
+                display: block; /* Force le tableau à se comporter comme un bloc pour le défilement horizontal */
+            }
+            table th, table td {
+                padding: 8px; /* Réduit le padding pour plus de lisibilité sur les petits écrans */
+            }
+            .results {
+                font-size: 0.9em; /* Réduit la taille de la police dans la section des résultats */
+            }
+        }
+        @media print {
+            .remaining-percentage-card {
+                display: none;
+            }
+            .print-header {
+                display: block;
+                font-size: 1.2em;
+                margin-bottom: 20px;
+                text-align: center;
+            }
+            .print-content {
+                text-align: center;
+                margin-top: 50px;
+            }
+            .print-content table {
+                margin: auto;
+                border-collapse: collapse;
+                width: 80%;
+            }
+            .print-content th, .print-content td {
+                border: 1px solid #ddd;
+                padding: 8px;
+            }
+            .print-content th {
+                background-color: #dc3545; /* Rouge vif */
+                color: #fff;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="remaining-percentage-card">
+        Pourcentage restant : <span id="percentageRemaining">100%</span>
+    </div>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h1>Répartition des Dépenses</h1>
+                <div class="date-time" id="dateTime"></div>
+            </div>
+            <div class="card-body">
+                <!-- Formulaire d'ajout des acteurs -->
+                <form id="actorForm">
+                    <h5><i class="fas fa-user-plus icon"></i>Ajouter des Acteurs</h5>
+                    <div class="form-group">
+                        <input type="text" id="actorName" class="form-control" placeholder="Nom de l'acteur" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" id="actorPercentage" class="form-control" placeholder="Pourcentage" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" id="actorDeduction" class="form-control" placeholder="Montant de la Créance" >
+                    </div>
+                    <button type="submit" class="btn btn-primary">Ajouter Acteur</button>
+                </form>
+
+                <!-- Tableau des acteurs -->
+                <div id="actorTableContainer" class="mt-4">
+                    <h5><i class="fas fa-table icon"></i>Liste des Acteurs</h5>
+                    <div class="table-responsive"> <!-- Conteneur responsive ajouté ici -->
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Pourcentage</th>
+                                    <th>Créance</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="actorTableBody">
+                                <!-- Les lignes des acteurs seront ajoutées ici -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Formulaire de répartition -->
+                <form id="distributionForm" class="mt-4">
+                    <h5><i class="fas fa-calculator icon"></i>Répartition des Montants</h5>
+                    <div class="form-group">
+                        <input type="number" id="totalAmount" class="form-control" placeholder="Montant total en XOF" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Calculer</button>
+                    <button type="button" class="btn btn-secondary" id="printButton">Imprimer</button>
+                </form>
+
+                <!-- Affichage des résultats -->
+                <div id="results" class="results">
+                    <h5>Répartition des Montants</h5>
+                    <div id="resultsContent" class="results-table">
+                        <!-- Les résultats seront ajoutés ici -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const actorForm = document.getElementById('actorForm');
+            const distributionForm = document.getElementById('distributionForm');
+            const actorTableBody = document.getElementById('actorTableBody');
+            const resultsContent = document.getElementById('resultsContent');
+            const percentageRemaining = document.getElementById('percentageRemaining');
+            const dateTimeElement = document.getElementById('dateTime');
+            let actors = [];
+            let totalPercentage = 100;
+
+            function updateDateTime() {
+                const now = new Date();
+                const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+                dateTimeElement.textContent = now.toLocaleDateString('fr-FR', options);
+            }
+
+            function updateActorTable() {
+                actorTableBody.innerHTML = '';
+                actors.forEach((actor, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${actor.name}</td>
+                        <td>${actor.percentage}%</td>
+                        <td>${actor.deduction.toFixed(2)} XOF</td>
+                        <td><button class="btn btn-danger btn-sm" onclick="removeActor(${index})">Supprimer</button></td>
+                    `;
+                    actorTableBody.appendChild(row);
+                });
+                percentageRemaining.textContent = `${totalPercentage}%`;
+            }
+
+            function removeActor(index) {
+                actors.splice(index, 1);
+                totalPercentage = 100 - actors.reduce((sum, actor) => sum + actor.percentage, 0);
+                updateActorTable();
+            }
+
+            actorForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const name = document.getElementById('actorName').value;
+                const percentage = parseFloat(document.getElementById('actorPercentage').value);
+                const deduction = parseFloat(document.getElementById('actorDeduction').value);
+                if (name && !isNaN(percentage) && !isNaN(deduction)) {
+                    actors.push({ name, percentage, deduction });
+                    totalPercentage -= percentage;
+                    updateActorTable();
+                    actorForm.reset();
+                }
+            });
+
+            distributionForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const totalAmount = parseFloat(document.getElementById('totalAmount').value);
+                if (!isNaN(totalAmount)) {
+                    let resultsHTML = `
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Nom de l'acteur</th>
+                                    <th>Pourcentage</th>
+                                    <th>Montant total attribué (XOF)</th>
+                                    <th>Créance (XOF)</th>
+                                    <th>Reste de la créance (XOF)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    actors.forEach(actor => {
+                        const amount = totalAmount * (actor.percentage / 100);
+                        const remainingAmount = amount > actor.deduction ? 0 : actor.deduction - amount;
+                        resultsHTML += `
+                            <tr>
+                                <td>${actor.name}</td>
+                                <td>${actor.percentage}%</td>
+                                <td>${amount.toFixed(2)} XOF</td>
+                                <td>${actor.deduction.toFixed(2)} XOF</td>
+                                <td>${remainingAmount.toFixed(2)} XOF</td>
+                            </tr>
+                        `;
+                    });
+                    resultsHTML += '</tbody></table>';
+                    resultsContent.innerHTML = resultsHTML;
+                }
+            });
+
+            document.getElementById('printButton').addEventListener('click', function() {
+                window.print();
+            });
+
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+        });
+    </script>
+</body>
+</html>
